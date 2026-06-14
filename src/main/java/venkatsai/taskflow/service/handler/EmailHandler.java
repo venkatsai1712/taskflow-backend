@@ -14,8 +14,9 @@ public class EmailHandler implements JobHandler{
     }
 
     @Override
-    public void handle(JobEntity jobEntity) {
+    public void handle(JobEntity jobEntity) throws InterruptedException {
         JsonNode payLoad = new ObjectMapper().readTree(jobEntity.getPayLoad());
+        Thread.sleep(10000);
         System.out.println("Email Sent to "+payLoad.get("emailId"));
     }
 }

@@ -16,7 +16,7 @@ public class JobController {
         this.jobService = jobService;
     }
     @PostMapping("/job")
-    public ResponseEntity<JobResponse> createJob(@RequestBody JobRequest req){
+    public ResponseEntity<JobResponse> createJob(@RequestBody JobRequest req) throws InterruptedException {
         return ResponseEntity.status(201).body(jobService.createJob(req));
     }
     @GetMapping("/job/{id}")

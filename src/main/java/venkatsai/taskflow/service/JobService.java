@@ -18,12 +18,14 @@ import java.util.UUID;
 public class JobService {
 
     private final JobRepository jobRepository;
+    private final QueueService queueService;
 
-    public JobService(JobRepository jobRepository) {
+    public JobService(JobRepository jobRepository, QueueService queueService) {
         this.jobRepository = jobRepository;
+        this.queueService = queueService;
     }
 
-    public JobResponse createJob(JobRequest req) {
+    public JobResponse createJob(JobRequest req) throws InterruptedException {
         JobType jobType = req.getType();
         JsonNode payLoad = req.getPayLoad();
         String jobId = UUID.randomUUID().toString();
@@ -35,6 +37,7 @@ public class JobService {
                 .status(JobStatus.PENDING)
                 .build();
         jobRepository.save(job);
+        queueService.put(job);
         return JobResponse.builder()
                 .jobId(jobId)
                 .status(String.valueOf(JobStatus.PENDING))
