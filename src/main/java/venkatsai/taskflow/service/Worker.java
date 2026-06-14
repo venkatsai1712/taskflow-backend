@@ -1,6 +1,10 @@
 package venkatsai.taskflow.service;
 
+import org.springframework.amqp.rabbit.annotation.RabbitHandler;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+import venkatsai.taskflow.config.RabbitMQConfig;
 import venkatsai.taskflow.entity.JobEntity;
 import venkatsai.taskflow.entity.JobStatus;
 import venkatsai.taskflow.exception.JobNotFoundException;
@@ -12,39 +16,39 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-public class Worker implements Runnable {
+@Component
+public class Worker {
     private final JobRepository jobRepository;
     private final JobHandlerFactory jobHandlerFactory;
-    private final QueueService queueService;
 
-    public Worker(JobRepository jobRepository, JobHandlerFactory jobHandlerFactory, QueueService queueService) {
+    public Worker(JobRepository jobRepository, JobHandlerFactory jobHandlerFactory) {
         this.jobRepository = jobRepository;
         this.jobHandlerFactory = jobHandlerFactory;
-        this.queueService = queueService;
     }
 
-    @Override
-     public void run() {
-        while (true) {
-            JobEntity job = null;
-            try {
-                JobEntity jobEntity = queueService.take();
-                    //Claim Job
-                    job = claimJob(jobEntity);
+    @RabbitListener(queues = RabbitMQConfig.JobQueue)
+    public void process(String id){
+        Optional<JobEntity> jobEntity = jobRepository.findById(id);
+        JobEntity job = null;
+        if(jobEntity.isEmpty()){
+            throw new RuntimeException("Cannot Find Job");
+        }
+        try {
+                //Claim Job
+                job = claimJob(jobEntity.get());
 
-                    //Handle Job
-                    JobHandler handler = jobHandlerFactory.getJobHandler(job.getType());
-                    handler.handle(job);
-                    System.out.println("Thread: " + Thread.currentThread().getName() + " Job Id: " + job.getId());
+                //Handle Job
+                JobHandler handler = jobHandlerFactory.getJobHandler(job.getType());
+                handler.handle(job);
+                System.out.println("Thread: " + Thread.currentThread().getName() + " Job Id: " + job.getId());
 
-                    //Save Status
-                    completeJob(job);
+                //Save Status
+                completeJob(job);
 
             } catch (Exception exception) {
                 //Fail Job
                 failJob(job, exception);
             }
-        }
     }
 
     public JobEntity claimJob(JobEntity jobEntity){
