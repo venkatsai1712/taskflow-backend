@@ -26,7 +26,7 @@ public class Worker {
         this.jobHandlerFactory = jobHandlerFactory;
     }
 
-    @RabbitListener(queues = RabbitMQConfig.JobQueue)
+    @RabbitListener(queues = "messaging-queue")
     public void process(String id){
         Optional<JobEntity> jobEntity = jobRepository.findById(id);
         JobEntity job = null;

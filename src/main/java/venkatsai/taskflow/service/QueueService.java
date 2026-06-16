@@ -13,7 +13,7 @@ public class QueueService {
         this.rabbitTemplate = rabbitTemplate;
     }
 
-    public void put(JobEntity job) throws InterruptedException {
-        rabbitTemplate.convertAndSend(RabbitMQConfig.JobQueue, job.getId());
+    public void put(String job, String key) throws InterruptedException {
+        rabbitTemplate.convertAndSend("direct-exchange",key,job);
     }
 }

@@ -37,7 +37,7 @@ public class JobService {
                 .status(JobStatus.PENDING)
                 .build();
         jobRepository.save(job);
-        queueService.put(job);
+        queueService.put(job.getId(),"email");
         return JobResponse.builder()
                 .jobId(jobId)
                 .status(String.valueOf(JobStatus.PENDING))
